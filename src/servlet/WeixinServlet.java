@@ -17,6 +17,7 @@ public class WeixinServlet extends HttpServlet {
 	/**
 	 * token验证
 	 */
+	@Override
     protected void doGet(HttpServletRequest req,HttpServletResponse resp)
     		throws ServletException,IOException {
     	String signature = req.getParameter("signature");
@@ -33,6 +34,7 @@ public class WeixinServlet extends HttpServlet {
     /**
      * 处理客户端发来的文本消息。
      */
+
     protected void doPost(HttpServletRequest req,HttpServletResponse resp)
     		throws ServletException,IOException{
     	req.setCharacterEncoding("utf-8");

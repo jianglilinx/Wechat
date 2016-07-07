@@ -17,14 +17,7 @@ import org.dom4j.Element;
 import org.dom4j.DocumentException;
 import org.dom4j.io.SAXReader;
 
-import po.Button;
-import po.ClickButton;
-import po.Image;
-import po.ImageMessage;
-import po.Menu;
-import po.News;
-import po.NewsMessage;
-import po.TextMessage;
+import po.*;
 
 import com.thoughtworks.xstream.XStream;
 
@@ -206,7 +199,7 @@ public class MessageUtil {
 	public static String initImageMessage(String toUserName,String fromUserName){
 		ImageMessage imageMessage = new ImageMessage();
 		Image image = new Image();
-		image.setMediaId("S5fTO9nFKb8QfD6wCosoqroieFXRRfVRUKdF-TM1-nCefUZvWHk27K62-5a43kp1");
+		image.setMediaId("hxAmTfwVuL2GXt8fP-GEkM2b2G2KpgpffjOAmgv7qRr0MxkPzgE8Z5PTaSImJjI1");
 		
 		imageMessage.setFromUserName(toUserName);
 		imageMessage.setToUserName(fromUserName);
@@ -252,6 +245,18 @@ public class MessageUtil {
 		menu.setButton(new Button[]{button1,button2,button});
 		
 		return JSONObject.fromObject(menu).toString();
+	}
+
+	public static String initPictext(){
+		PicText picText = new PicText();
+		picText.setAuthor("jiang");
+		picText.setContent("heiheixixi");
+		picText.setContent_source_url("www.baidu.com");
+		picText.setDigest("heihei");
+		picText.setShow_cover_pic(0);
+		picText.setTitle("Success!");
+		picText.setThumb_media_id("");
+		return JSONObject.fromObject(picText).toString();
 	}
 
 }

@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 
 public class checkUtil {
-	private static final String Token = "myworkbox";
+	private static final String Token = "jiang";
 	
 	public static boolean checkSignature(String signature,String timestamp,String nonce){
 		String[] arr = new String[]{Token,timestamp,nonce};

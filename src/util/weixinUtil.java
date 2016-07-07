@@ -9,9 +9,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.util.logging.Logger;
 
 import javax.naming.spi.DirStateFactory.Result;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 
 import net.sf.json.JSONObject;
 
@@ -24,10 +32,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
-import po.AccessToken;
-import po.Button;
-import po.ClickButton;
-import po.Menu;
+import po.*;
 
 @SuppressWarnings("deprecation")
 public class weixinUtil {
@@ -39,6 +44,8 @@ public class weixinUtil {
 	private static final String APPSECRET="112979ca9f34a83a6761dc47aa8feea5";
 	private static final String ACCESS_TOKEN_URL="https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=APPID&secret=APPSECRET";
 	private static final String UPLOAD_URL="https://api.weixin.qq.com/cgi-bin/media/upload?access_token=ACCESS_TOKEN&type=TYPE";
+	private static final String UPLOAD_URL_FOREVER = "https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=ACCESS_TOKEN&type=TYPE";
+	private static final String UPLOAD_PICTEXT = "https://api.weixin.qq.com/cgi-bin/material/add_news?access_token=ACCESS_TOKEN";
 	private static final String CREATE_MENU_RUL="https://api.weixin.qq.com/cgi-bin/menu/create?access_token=ACCESS_TOKEN";
 	private static final String DELETE_MENU_RUL="https://api.weixin.qq.com/cgi-bin/menu/delete?access_token=ACCESS_TOKEN";
 	
@@ -113,7 +120,21 @@ public class weixinUtil {
 		}
 		return token;
 	}
-	
+
+	public static String upload_pictext(String picText,String accessToken) throws IOException{
+		String purl = UPLOAD_PICTEXT.replace("ACCESS_TOKEN",accessToken);
+		JSONObject jsonObject = doPostStr(purl,picText);
+		if(jsonObject!=null){
+			return jsonObject.getString("errcode");
+		}
+
+		return jsonObject.getString("media_id");
+	}
+
+
+
+
+
 	/**
 	 * 处理文件上传,并获取medieID
 	 * @param filePath
@@ -194,7 +215,84 @@ public class weixinUtil {
 		
 		return jsonObject.getString("media_id");
 	}
-	
+
+	public static String upload2(String filePath,String accessToken,String type) throws IOException{
+		File file = new File(filePath);
+		if(!file.exists()||!file.isFile()){
+			throw  new IOException("文件不存在！");
+		}
+		String url = UPLOAD_URL_FOREVER.replace("ACCESS_TOKEN", accessToken).replace("TYPE", type);
+		URL urlObj = new URL(url);
+
+		//连接
+		HttpURLConnection connection = (HttpURLConnection) urlObj.openConnection();
+		connection.setRequestMethod("POST");
+		connection.setDoInput(true);
+		connection.setDoOutput(true);
+		connection.setUseCaches(false);
+
+		//设置请求头信息
+		String BOUNDRY = "----------"+System.currentTimeMillis();
+
+		connection.setRequestProperty("Content-Type", "multipart/form-data;boundary="+BOUNDRY);
+		StringBuilder sBuilder = new StringBuilder();
+		sBuilder.append("--");
+		sBuilder.append(BOUNDRY);
+		sBuilder.append("\r\n");
+		sBuilder.append("Content-Disposition:form-data;name=\"file\";filename=\""+"1.jpg"+"\"\r\n");
+		sBuilder.append("Content-Type:application/octet-stream\r\n\r\n");
+
+		byte[] head = sBuilder.toString().getBytes("utf-8");
+
+		//获得输出流
+		OutputStream out = new DataOutputStream(connection.getOutputStream());
+		//输出表头
+		out.write(head);
+
+		//文件正文部分，把文件以流的方式推入到url中。
+		DataInputStream in = new DataInputStream(new FileInputStream(file));
+		int bytes = 0;
+		byte[] bufferOut = new byte[1024];
+		while((bytes=in.read(bufferOut))!=-1){
+			out.write(bufferOut,0,bytes);
+		}
+		in.close();
+
+		//结尾部分
+		byte[] foot = ("\r\n--"+BOUNDRY+"\r\n").getBytes("utf-8");//定义最后的数据分割线
+
+		out.write(foot);
+
+		out.flush();
+		out.close();
+
+
+		StringBuffer buffer = new StringBuffer();
+		BufferedReader reader = null;
+		String result = null;
+
+		//定义bufferedReader 输入流来读取URL的响应。
+		reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+		String line = null;
+		while((line = reader.readLine())!= null){
+			buffer.append(line);
+		}
+		if(result==null){
+			result=buffer.toString();
+		}
+		reader.close();
+
+		JSONObject jsonObject = JSONObject.fromObject(result);
+		System.out.println(jsonObject);
+
+		return jsonObject.getString("errcode");
+	}
+
+
+
+
+
+
 
 	/**
 	 * 创建自定义菜单。
@@ -216,7 +314,6 @@ public class weixinUtil {
 	/**
 	 * 删除自定义菜单
 	 * @param token
-	 * @param menu
 	 * @return
 	 */
 	public static int deleteMenu(String token){
@@ -228,4 +325,8 @@ public class weixinUtil {
 		}
 		return result;
 	}
+
+
 }
+
+
